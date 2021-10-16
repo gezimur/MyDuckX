@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 
+set(CMAKE_C_COMPILER "gcc-10.3")
+set(CMAKE_C_COMPILER "gcc-10.3")
+
 project(duckx VERSION 0.2)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)

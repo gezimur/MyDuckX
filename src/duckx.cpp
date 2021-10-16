@@ -27,6 +27,22 @@ void duckx::Run::set_parent(pugi::xml_node node) {
 
 void duckx::Run::set_current(pugi::xml_node node) { this->current = node; }
 
+pugi::xml_node& duckx::Run::get_current()
+{
+    return current;
+}
+
+pugi::xml_node duckx::Run::get_style() const {
+    return this->current.child("w:rPr");
+}
+
+void duckx::Run::set_style(pugi::xml_node StyleNode)
+{
+    this->current.remove_child("w:rPr");
+
+    this->current.prepend_copy(StyleNode);
+}
+
 std::string duckx::Run::get_text() const {
     return this->current.child("w:t").text().get();
 }
@@ -162,6 +178,18 @@ duckx::Paragraph &duckx::Paragraph::next() {
 
 bool duckx::Paragraph::has_next() const { return this->current != 0; }
 
+pugi::xml_node duckx::Paragraph::get_style() const
+{
+    return this->current.child("w:pPr");
+}
+
+void duckx::Paragraph::set_style(pugi::xml_node StyleNode)
+{
+    this->current.remove_child("w:pPr");
+
+    this->current.prepend_copy(StyleNode);
+}
+
 duckx::Run &duckx::Paragraph::runs() {
     this->run.set_parent(this->current);
     return this->run;
@@ -222,11 +250,19 @@ duckx::Run &duckx::Paragraph::add_run(const char *text,
     return *new Run(this->current, new_run);
 }
 
+duckx::Run& duckx::Paragraph::add_run(duckx::Run& rRun)
+{
+    auto nodeNewRun = this->current.append_copy(rRun.get_current());
+    return *new Run(this->current, nodeNewRun);
+}
+
 duckx::Paragraph &
 duckx::Paragraph::insert_paragraph_after(const std::string &text,
-                                         duckx::formatting_flag f) {
+                                         duckx::formatting_flag f) {       
     pugi::xml_node new_para =
         this->parent.insert_child_after("w:p", this->current);
+
+//    pugi::xml_node new_para = this->parent.append_child("w:p");
 
     Paragraph *p = new Paragraph();
     p->set_current(new_para);
@@ -267,6 +303,13 @@ void duckx::Document::open() {
     free(buf);
 
     this->paragraph.set_parent(document.child("w:document").child("w:body"));
+}
+
+std::string duckx::Document::getXml() const
+{
+    xml_string_writer writer;
+    this->document.print(writer);
+    return std::move(writer.result);
 }
 
 void duckx::Document::save() const {
@@ -334,6 +377,18 @@ void duckx::Document::save() const {
     // Remove original zip, rename new to correct name
     remove(original_file.c_str());
     rename(temp_file.c_str(), original_file.c_str());
+}
+
+pugi::xml_node duckx::Document::get_style() const
+{
+    return this->document.child("w:document").child("w:body").child("w:sectPr");
+}
+
+void duckx::Document::set_style(pugi::xml_node StyleNode)
+{
+    this->document.child("w:document").child("w:body").remove_child("w:sectPr");
+
+    this->document.child("w:document").child("w:body").append_copy(StyleNode);
 }
 
 duckx::Paragraph &duckx::Document::paragraphs() {
