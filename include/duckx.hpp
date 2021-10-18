@@ -77,6 +77,8 @@ class Paragraph {
     duckx::Run& add_run(duckx::Run& rRun);
     Paragraph &insert_paragraph_after(const std::string &,
                                       duckx::formatting_flag = duckx::none);
+
+    Paragraph& append(const std::string& text, pugi::xml_node StyleNode = pugi::xml_node());
 };
 
 // TableCell contains one or more paragraphs
@@ -95,10 +97,14 @@ class TableCell {
     void set_parent(pugi::xml_node);
     void set_current(pugi::xml_node);
 
-    Paragraph &paragraphs();
+    pugi::xml_node get_style();
+
+    TableCell& append(pugi::xml_node StyleNode = pugi::xml_node());
 
     TableCell &next();
     bool has_next() const;
+
+    Paragraph &paragraphs();
 };
 
 // TableRow consists of one or more TableCells
@@ -115,10 +121,14 @@ class TableRow {
     void set_parent(pugi::xml_node);
     void set_current(pugi::xml_node);
 
-    TableCell &cells();
+    pugi::xml_node get_style();
+
+    TableRow& append(pugi::xml_node StyleNode = pugi::xml_node());
 
     bool has_next() const;
     TableRow &next();
+
+    TableCell &cells();
 };
 
 // Table consists of one or more TableRow objects
@@ -135,6 +145,10 @@ class Table {
     Table(pugi::xml_node, pugi::xml_node);
     void set_parent(pugi::xml_node);
     void set_current(pugi::xml_node);
+
+    pugi::xml_node get_style();
+
+    Table& append(pugi::xml_node StyleNode = pugi::xml_node());
 
     Table &next();
     bool has_next() const;

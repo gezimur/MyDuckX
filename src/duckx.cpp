@@ -77,14 +77,41 @@ void duckx::TableCell::set_parent(pugi::xml_node node) {
     this->paragraph.set_parent(this->current);
 }
 
-void duckx::TableCell::set_current(pugi::xml_node node) {
+void duckx::TableCell::set_current(pugi::xml_node node)
+{
     this->current = node;
 }
+
+pugi::xml_node duckx::TableCell::get_style()
+{
+    return this->current.child("w:tcPr");
+}
+
+duckx::TableCell& duckx::TableCell::append(pugi::xml_node StyleNode)
+{
+    pugi::xml_node new_para = this->parent.append_child("w:tc");
+
+//    pugi::xml_node new_para = this->parent.append_child("w:p");
+
+    new_para.prepend_copy(StyleNode);
+
+    TableCell *p = new TableCell();
+    p->set_current(new_para);
+    p->set_parent(this->parent);
+
+    return *p;
+}
+
 
 bool duckx::TableCell::has_next() const { return this->current != 0; }
 
 duckx::TableCell &duckx::TableCell::next() {
-    this->current = this->current.next_sibling();
+    auto Next = this->current.next_sibling();
+    if (std::string(Next.name()) != std::string("w:tc"))
+        this->current = pugi::xml_node();
+    else
+        this->current = Next;
+
     return *this;
 }
 
@@ -108,10 +135,37 @@ void duckx::TableRow::set_parent(pugi::xml_node node) {
     this->cell.set_parent(this->current);
 }
 
-void duckx::TableRow::set_current(pugi::xml_node node) { this->current = node; }
+void duckx::TableRow::set_current(pugi::xml_node node)
+{
+    this->current = node;
+}
+
+pugi::xml_node duckx::TableRow::get_style()
+{
+    return this->current.child("w:trPr");
+}
+
+duckx::TableRow& duckx::TableRow::append(pugi::xml_node StyleNode)
+{
+    pugi::xml_node new_para = this->parent.append_child("w:tr");
+
+    new_para.prepend_copy(StyleNode);
+//    pugi::xml_node new_para = this->parent.append_child("w:p");
+
+    TableRow *p = new TableRow();
+    p->set_current(new_para);
+    p->set_parent(this->parent);
+
+    return *p;
+}
 
 duckx::TableRow &duckx::TableRow::next() {
-    this->current = this->current.next_sibling();
+    auto Next = this->current.next_sibling();
+    if (std::string(Next.name()) != "w:tr")
+        this->current = pugi::xml_node();
+    else
+        this->current = Next;
+
     return *this;
 }
 
@@ -137,15 +191,44 @@ void duckx::Table::set_parent(pugi::xml_node node) {
     this->row.set_parent(this->current);
 }
 
-bool duckx::Table::has_next() const { return this->current != 0; }
+bool duckx::Table::has_next() const
+{
+    return this->current != 0;
+}
 
 duckx::Table &duckx::Table::next() {
-    this->current = this->current.next_sibling();
+    auto Next = this->current.next_sibling();
+    if (std::string(Next.name()) != "w:tbl")
+        this->current = pugi::xml_node();
+    else
+        this->current = Next;
     this->row.set_parent(this->current);
     return *this;
 }
 
-void duckx::Table::set_current(pugi::xml_node node) { this->current = node; }
+void duckx::Table::set_current(pugi::xml_node node)
+{
+    this->current = node;
+}
+
+pugi::xml_node duckx::Table::get_style()
+{
+    return this->current.child("w:tblPr");
+}
+
+duckx::Table& duckx::Table::append(pugi::xml_node StyleNode)
+{
+    pugi::xml_node new_para = this->parent.append_child("w:tbl");
+//    pugi::xml_node new_para = this->parent.append_child("w:p");
+
+    new_para.prepend_copy(StyleNode);
+
+    Table *p = new Table();
+    p->set_current(new_para);
+    p->set_parent(this->parent);
+
+    return *p;
+}
 
 duckx::TableRow &duckx::Table::rows() {
     this->row.set_parent(this->current);
@@ -171,7 +254,15 @@ void duckx::Paragraph::set_current(pugi::xml_node node) {
 }
 
 duckx::Paragraph &duckx::Paragraph::next() {
-    this->current = this->current.next_sibling();
+    auto Next = this->current.next_sibling();
+//    while (Next != pugi::xml_node() && std::string(Next.name()) != "w:p")
+//        Next = Next.next_sibling();
+
+//    if (std::string(Next.name()) != "w:p")
+//        this->current = pugi::xml_node();
+//    else
+//        this->current = Next;
+    this->current = Next;
     this->run.set_parent(this->current);
     return *this;
 }
@@ -267,6 +358,20 @@ duckx::Paragraph::insert_paragraph_after(const std::string &text,
     Paragraph *p = new Paragraph();
     p->set_current(new_para);
     p->add_run(text, f);
+
+    return *p;
+}
+
+duckx::Paragraph& duckx::Paragraph::append(const std::string& text, pugi::xml_node StyleNode)
+{
+    pugi::xml_node new_para = this->parent.append_child("w:p");
+
+    new_para.prepend_copy(StyleNode);
+
+    Paragraph *p = new Paragraph();
+    p->set_current(new_para);
+    p->set_parent(this->parent);
+    p->add_run(text);
 
     return *p;
 }
